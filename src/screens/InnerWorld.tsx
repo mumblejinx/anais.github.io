@@ -40,8 +40,9 @@ export default function InnerWorld() {
     });
 
     const unsubscribeArtifacts = onSnapshot(collection(db, 'users', user.uid, 'artifacts'), (snap) => {
-      setArtifacts(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-      setCounts(prev => ({ ...prev, artifacts: snap.size }));
+      const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setArtifacts(data);
+      setCounts(prev => ({ ...prev, artifacts: data.filter(a => (a as any).module === 'inner').length }));
     });
 
     const unsubscribeBridges = onSnapshot(query(collection(db, 'users', user.uid, 'neural_bridges'), orderBy('createdAt', 'desc')), (snap) => {
@@ -113,6 +114,7 @@ export default function InnerWorld() {
       await addDoc(collection(db, 'users', user.uid, 'artifacts'), {
         type,
         name: name.trim(),
+        module: 'inner',
         createdAt: serverTimestamp()
       });
       toast.success(`${type.toUpperCase()}_ARCHIVED`);
@@ -224,9 +226,11 @@ export default function InnerWorld() {
               </div>
 
               <div className="pt-8 border-t border-outline-variant/30">
-                <h4 className="text-xs font-bold uppercase tracking-widest mb-4">Current_Inventory: {artifacts.length}</h4>
+                <h4 className="text-xs font-bold uppercase tracking-widest mb-4">Current_Inventory: {counts.artifacts}</h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {artifacts.map((a) => (
+                  {artifacts
+                    .filter(a => a.module === 'inner')
+                    .map((a) => (
                     <div key={a.id} className="p-3 bg-surface-container-high border border-outline-variant text-[10px] font-bold uppercase truncate">
                       {a.name} <span className="opacity-40 ml-1">({a.type})</span>
                     </div>

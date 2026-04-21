@@ -47,7 +47,7 @@ export default function TheOracle() {
     const unsubscribeArtifacts = onSnapshot(collection(db, 'users', user.uid, 'artifacts'), (snap) => {
       const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setArtifacts(data);
-      setCounts(prev => ({ ...prev, oracle: snap.size }));
+      setCounts(prev => ({ ...prev, oracle: data.filter(a => (a as any).module === 'oracle').length }));
     });
 
     const unsubscribeBridges = onSnapshot(collection(db, 'users', user.uid, 'neural_bridges'), (snap) => {
@@ -149,12 +149,12 @@ export default function TheOracle() {
     const loadingToast = toast.loading("REFINING_ARTIFACT...");
     try {
       await addDoc(collection(db, 'users', user.uid, 'artifacts'), {
-        name: artifactName,
+        name: artifactName.trim(),
         type: selectedCategory.toLowerCase(),
+        module: 'oracle',
         createdAt: serverTimestamp()
       });
       setArtifactName('');
-      setSelectedCategory(null);
       toast.success(`${selectedCategory.toUpperCase()}_SECURED: Archive expanded.`, { id: loadingToast });
       await rewardXP(30, 10);
     } catch (e) {
@@ -360,10 +360,14 @@ export default function TheOracle() {
                 </div>
                 
                 <div className="space-y-4">
-                  <h4 className="text-xs font-bold uppercase tracking-widest text-primary mb-4">Secured Artifacts</h4>
-                  {artifacts.length > 0 ? (
+                  <h4 className="text-xs font-bold uppercase tracking-widest text-primary mb-4">
+                    Secured Artifacts: {selectedCategory || 'ALL'}
+                  </h4>
+                  {artifacts.filter(a => a.module === 'oracle' && (!selectedCategory || a.type === selectedCategory.toLowerCase())).length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {artifacts.map((a) => (
+                      {artifacts
+                        .filter(a => a.module === 'oracle' && (!selectedCategory || a.type === selectedCategory.toLowerCase()))
+                        .map((a) => (
                         <div key={a.id} className="p-4 bg-surface-container-high border-l-4 border-primary">
                           <p className="font-bold text-sm truncate">{a.name}</p>
                           <p className="text-[10px] uppercase opacity-60 tracking-widest">{a.type}</p>
@@ -372,7 +376,7 @@ export default function TheOracle() {
                     </div>
                   ) : (
                     <div className="p-10 border-2 border-dashed border-outline-variant text-center opacity-30">
-                      <p className="text-[10px] uppercase tracking-[0.3em]">No_Artifacts_Archived</p>
+                      <p className="text-[10px] uppercase tracking-[0.3em]">No_{selectedCategory || 'Artifacts'}_Archived</p>
                     </div>
                   )}
                 </div>
