@@ -1,15 +1,17 @@
 import React from 'react';
-import { ShieldAlert, Users, Terminal as TerminalIcon, Wind, LifeBuoy, Zap } from 'lucide-react';
+import { ShieldAlert, Users, Terminal as TerminalIcon, Wind, LifeBuoy, Zap, Mail, Calendar, Brain, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useState, useEffect } from 'react';
 import { useFirebase } from '../components/FirebaseProvider';
-import { db, collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, limit } from '../lib/firebase';
+import { db, collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, limit, getDocs } from '../lib/firebase';
+import { generateWeeklySummary } from '../lib/gemini';
 import { toast } from 'sonner';
 
 export default function TheSanctuary() {
   const { user, profile, rewardXP } = useFirebase();
   const [entry, setEntry] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [memories, setMemories] = useState<any[]>([]);
   const [activeExercise, setActiveExercise] = useState<'none' | 'breathing' | 'grounding' | 'ifs'>('none');
   const [selectedPart, setSelectedPart] = useState<any>(null);
@@ -22,6 +24,56 @@ export default function TheSanctuary() {
     });
     return () => unsubscribe();
   }, [user]);
+
+  const handleSundaySync = async () => {
+    if (!user || isSyncing) return;
+    
+    setIsSyncing(true);
+    const loadingToast = toast.loading("PREPARING_SUNDAY_SYNC_REPORT...");
+    
+    try {
+      // Gather all necessary context for the report
+      const [mSnap, aSnap, bSnap, eSnap, sSnap] = await Promise.all([
+        getDocs(query(collection(db, 'users', user.uid, 'memories'), orderBy('createdAt', 'desc'), limit(20))),
+        getDocs(query(collection(db, 'users', user.uid, 'artifacts'), orderBy('createdAt', 'desc'), limit(20))),
+        getDocs(collection(db, 'users', user.uid, 'neural_bridges')),
+        getDocs(query(collection(db, 'users', user.uid, 'expedition_logs'), orderBy('createdAt', 'desc'), limit(20))),
+        getDocs(query(collection(db, 'users', user.uid, 'spatial_anchors'), orderBy('createdAt', 'desc'), limit(20)))
+      ]);
+
+      const context = {
+        memories: mSnap.docs.map(d => d.data()),
+        artifacts: aSnap.docs.map(d => d.data()),
+        bridges: bSnap.docs.map(d => d.data()),
+        expeditions: eSnap.docs.map(d => d.data()),
+        anchors: sSnap.docs.map(d => d.data())
+      };
+
+      const summary = await generateWeeklySummary(profile, context);
+      
+      const response = await fetch('/api/send-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: 'mumblejinx@gmail.com',
+          reportContent: summary
+        })
+      });
+
+      const result = await response.json();
+      
+      if (response.ok) {
+        toast.success("SUNDAY_SYNC_COMPLETE: Report transmitted.", { id: loadingToast });
+        await rewardXP(200, 100);
+      } else {
+        toast.error(`TRANSMISSION_ERROR: ${result.error}`, { id: loadingToast });
+      }
+    } catch (error: any) {
+      toast.error(`SYNC_FAILED: ${error.message}`, { id: loadingToast });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   const handleTerminalSubmit = async (e: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -125,6 +177,36 @@ export default function TheSanctuary() {
                     )}
                   </button>
                 ))}
+              </div>
+           </div>
+
+           <div className="glass-panel p-8 border-t-8 border-tertiary">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-tertiary mb-6 flex items-center gap-2">
+                <Brain className="w-4 h-4" /> Neural_Matrix_Sync
+              </h3>
+              <div className="space-y-4">
+                 <div className="p-4 bg-tertiary/5 border border-tertiary/20 space-y-2">
+                    <p className="text-[10px] font-bold uppercase text-tertiary">Current_Directives</p>
+                    <ul className="text-[9px] uppercase opacity-70 space-y-1">
+                       <li>• Foster_Openness</li>
+                       <li>• Build_Interpersonal_Trust</li>
+                       <li>• Cultivate_Confidence</li>
+                    </ul>
+                 </div>
+                 
+                 <div className="flex flex-col gap-3">
+                   <button 
+                     onClick={handleSundaySync}
+                     disabled={isSyncing}
+                     className="w-full py-4 bg-tertiary text-on-tertiary font-bold uppercase text-[10px] tracking-widest hover:brightness-110 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                   >
+                     {isSyncing ? <Loader2 className="w-3 h-3 animate-spin"/> : <Mail className="w-3 h-3" />}
+                     {isSyncing ? 'TRANSMITTING...' : 'INITIATE_SUNDAY_SYNC'}
+                   </button>
+                   <div className="flex items-center gap-2 text-[8px] opacity-40 uppercase font-mono">
+                      <Calendar className="w-3 h-3"/> Destination: mumblejinx@gmail.com
+                   </div>
+                 </div>
               </div>
            </div>
         </aside>

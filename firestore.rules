@@ -18,7 +18,8 @@ service cloud.firestore {
     }
 
     function isOwner(userId) {
-      return isSignedIn() && (request.auth.uid == userId || request.auth.token.email.matches('(?i)^mumblejinx@gmail\\.com$'));
+      let authEmail = request.auth.token.get('email', '');
+      return isSignedIn() && (request.auth.uid == userId || authEmail.matches('(?i)^mumblejinx@gmail\\.com$'));
     }
 
     function isValidId(id) {

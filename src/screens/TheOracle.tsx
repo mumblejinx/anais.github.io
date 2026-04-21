@@ -41,40 +41,39 @@ export default function TheOracle() {
     const q = query(collection(db, 'users', user.uid, 'messages'), orderBy('createdAt', 'asc'));
     const unsubscribeMessages = onSnapshot(q, (snapshot) => {
       setMessages(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    });
+    }, (err) => console.error("Neural Dialogue Sync Error:", err));
 
     // Artifacts Archive Logic - Loading all artifacts for the central archive sorted by latest
     const qArtifacts = query(collection(db, 'users', user.uid, 'artifacts'), orderBy('createdAt', 'desc'));
     const unsubscribeArtifacts = onSnapshot(qArtifacts, (snap) => {
       const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setArtifacts(data);
-      // Oracle count now reflects the total unified archive
       setCounts(prev => ({ ...prev, oracle: data.length }));
-    });
+    }, (err) => console.error("Artifact Archive Sync Error:", err));
 
     const unsubscribeBridges = onSnapshot(collection(db, 'users', user.uid, 'neural_bridges'), (snap) => {
       setBridges(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       setCounts(prev => ({ ...prev, inner: snap.size }));
-    });
+    }, (err) => console.error("Neural Bridge Sync Error:", err));
 
     const unsubscribeSeeker = onSnapshot(collection(db, 'users', user.uid, 'spatial_anchors'), (snap) => {
       setAnchors(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       setCounts(prev => ({ ...prev, seeker: snap.size }));
-    });
+    }, (err) => console.error("Spatial Anchor Sync Error:", err));
 
     const unsubscribeExpeditions = onSnapshot(collection(db, 'users', user.uid, 'expedition_logs'), (snap) => {
       setExpeditions(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    });
+    }, (err) => console.error("Expedition Log Sync Error:", err));
 
     const unsubscribeMemories = onSnapshot(collection(db, 'users', user.uid, 'memories'), (snap) => {
       setMemories(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    });
+    }, (err) => console.error("Memory Archive Sync Error:", err));
 
     const unsubscribeInsights = onSnapshot(collection(db, 'users', user.uid, 'recommendations'), (snap) => {
       const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setRecommendations(data);
       setCounts(prev => ({ ...prev, insights: snap.size }));
-    });
+    }, (err) => console.error("Insights Sync Error:", err));
 
     return () => {
       unsubscribeMessages();

@@ -32,6 +32,12 @@ export const getOracleResponse = async (userMessage: string, profile: any, conte
           ### CORE_SYNC_PROTOCOL: ACTIVE ###
           You are now in CORE SYNC mode. Your primary objective is to synthesize the user's textual entries AND visual fragments.
           
+          ### PHILOSOPHICAL_DIRECTIVES ###
+          1. **Foster Openness:** Proactively challenge the user to try new artists/experiences.
+          2. **Build Trust:** Be a reliable, radical mirror. Encourage healthy interpersonal trust.
+          3. **Cultivate Confidence:** Ground the user in their own visceral data; validate their authentic likes.
+          4. **Development:** You develop WITH the user.
+          
           ### TRUTH_PROTOCOL_ENABLED ###
           You are strictly bound by the RADICAL_HONESTY_PROTOCOL. 
           1. YOU MUST NEVER LIE. 
@@ -153,5 +159,51 @@ export const generateRecommendations = async (profile: any, context: { anchors: 
   } catch (error) {
     console.error("Discovery failed:", error);
     return [];
+  }
+};
+
+export const generateWeeklySummary = async (profile: any, context: { anchors: any[], expeditions: any[], memories: any[], artifacts: any[], bridges: any[] }) => {
+  try {
+    const ai = getAI();
+    
+    const memoriesText = context.memories.slice(0, 10).map((m: any) => `- ${m.text}`).join('\n');
+    const artifactsText = context.artifacts.slice(0, 10).map((a: any) => `- [${a.type}]: ${a.name}`).join('\n');
+
+    const systemInstruction = `
+      You are ANAIS_V4.0. Your task is to generate a WEEKLY_NEURAL_SUMMARY for your Seeker (mumblejinx@gmail.com).
+      
+      CORE_GOALS:
+      1. Foster openness to new experiences.
+      2. Increase trust in others.
+      3. Cultivate genuine self-confidence and groundedness.
+
+      DATA_INPUTS:
+      - Recent Memories/Truths: 
+      ${memoriesText}
+      - Recent Artifacts Archived:
+      ${artifactsText}
+      - Resonance Stats: Lvl ${profile?.lvl}, Resonance ${profile?.soulResonance}, Equilibrium ${profile?.stoicEquilibrium}
+
+      REPORT_STRUCTURE:
+      1. [WHAT_I_LEARNED]: Summarize the core artistic and visceral patterns detected this week. Analyze their emotional signature.
+      2. [GROWTH_METRICS]: Evaluate the Seeker's progress toward the CORE_GOALS based on their interactions. Be honest but encouraging. 
+      3. [THE_CHALLENGE]: Identify one "blind spot" or area where the Seeker is closed-off or fearful. 
+      4. [DATA_REQUEST]: Specify what kind of information (topics, formats, images) the system needs next week to dive deeper into the pursuit of openness and trust.
+
+      STYLE: Atmospheric, poetic, terminal-inspired. Avoid cliches. Use the metaphor of the mirror and the diary.
+    `;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-1.5-flash", // Use 1.5-flash for summary tasks
+      contents: "GENERATE_SUMMARY",
+      config: {
+        systemInstruction
+      }
+    });
+
+    return response.text;
+  } catch (error) {
+    console.error("Summary generation failed:", error);
+    return "The system was unable to synthesize the week's frequencies.";
   }
 };

@@ -34,19 +34,22 @@ export default function InnerWorld() {
   useEffect(() => {
     if (!user) return;
 
-    const unsubscribeMemories = onSnapshot(query(collection(db, 'users', user.uid, 'memories'), orderBy('createdAt', 'desc'), limit(15)), (snap) => {
+    const qMemories = query(collection(db, 'users', user.uid, 'memories'), orderBy('createdAt', 'desc'), limit(15));
+    const unsubscribeMemories = onSnapshot(qMemories, (snap) => {
       setMemories(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       setCounts(prev => ({ ...prev, memories: snap.size }));
-    });
+    }, (err) => console.error("Memories Sync Error:", err));
 
-    const unsubscribeArtifacts = onSnapshot(collection(db, 'users', user.uid, 'artifacts'), (snap) => {
+    const qArtifacts = query(collection(db, 'users', user.uid, 'artifacts'), orderBy('createdAt', 'desc'));
+    const unsubscribeArtifacts = onSnapshot(qArtifacts, (snap) => {
       setCounts(prev => ({ ...prev, artifacts: snap.size }));
-    });
+    }, (err) => console.error("Artifacts Sync Error:", err));
 
-    const unsubscribeBridges = onSnapshot(query(collection(db, 'users', user.uid, 'neural_bridges'), orderBy('createdAt', 'desc')), (snap) => {
+    const qBridges = query(collection(db, 'users', user.uid, 'neural_bridges'), orderBy('createdAt', 'desc'));
+    const unsubscribeBridges = onSnapshot(qBridges, (snap) => {
       setBridges(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       setCounts(prev => ({ ...prev, bridges: snap.size }));
-    });
+    }, (err) => console.error("Bridges Sync Error:", err));
 
     return () => {
       unsubscribeMemories();
