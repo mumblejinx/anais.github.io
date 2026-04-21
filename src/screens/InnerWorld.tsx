@@ -96,12 +96,14 @@ export default function InnerWorld() {
         createdAt: serverTimestamp()
       });
 
-      await rewardXP(150, 60);
       setTruth('');
       setSelectedImage(null);
       setImagePreview(null);
       toast.success("TRUTH_INGESTED", { id: loadingToast });
+      
+      rewardXP(150, 60).catch(e => console.error("Truth XP failed:", e));
     } catch (e) {
+      console.error("Sync failure details:", e);
       toast.error("SYNC_FAILED", { id: loadingToast });
     } finally {
       setIsSyncing(false);
@@ -118,7 +120,9 @@ export default function InnerWorld() {
         createdAt: serverTimestamp()
       });
       toast.success(`${type.toUpperCase()}_ARCHIVED`);
+      rewardXP(30, 10).catch(e => console.error("Inner Archive XP failed:", e));
     } catch (e) {
+      console.error("Inner Archive failure details:", e);
       toast.error("ARCHIVE_FAILED");
     }
   };

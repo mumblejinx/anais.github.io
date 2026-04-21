@@ -156,8 +156,11 @@ export default function TheOracle() {
       });
       setArtifactName('');
       toast.success(`${selectedCategory.toUpperCase()}_SECURED: Archive expanded.`, { id: loadingToast });
-      await rewardXP(30, 10);
+      
+      // Call reward separately so it doesn't block if rules reject it
+      rewardXP(30, 10).catch(err => console.error("Archive XP failed:", err));
     } catch (e) {
+      console.error("Archive failure details:", e);
       toast.error("ARCHIVE_ERROR: Fragment lost.", { id: loadingToast });
     }
   };

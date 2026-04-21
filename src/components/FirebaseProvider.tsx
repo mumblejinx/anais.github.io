@@ -38,7 +38,6 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const newLvl = Math.floor(newXP / 1000);
       
       await setDoc(userRef, {
-        ...profile,
         xp: newXP,
         anaisXP: newAnaisXP,
         lvl: newLvl,
