@@ -32,6 +32,25 @@ Even after the build succeeds, you must tell GitHub to host the site:
 3. Click **Save**.
 4. Wait 1-2 minutes, and your site will be live at your URL.
 
+---
+
+## 🛠️ Troubleshooting 404 Errors
+
+If you are seeing a 404 "Site Not Found" error:
+
+1. **Default Branch**: 
+   * **Do NOT change the default branch in Settings > General to `gh-pages`.**
+   * Keep your default branch as **`main`**. GitHub needs `main` to run the build workflow (the "engine"), while `gh-pages` is just the "output".
+2. **User Site vs. Project Site (The URL)**:
+   * **If your GitHub username is `anais`**: This is a "User Site." Your URL is exactly `https://anais.github.io/`.
+   * **If your GitHub username is NOT `anais` (e.g., `mumblejinx`)**: This is a "Project Site." Your URL is `https://YOUR_USERNAME.github.io/anais.github.io/`.
+   * I have already updated `vite.config.ts` with `base: './'` which makes it work correctly for either case.
+3. **Wait for Propagation**: Even after a successful build, GitHub can sometimes take up to 10 minutes to update its global cache. Try opening the URL in an **Incognito/Private window** to bypass browser cache.
+4. **White Screen Error**:
+   * If the site loads but the screen is white, check your **`index.html`**. 
+   * The script tag must be relative: `<script type="module" src="./src/main.tsx"></script>` (using `./`).
+   * I have already applied this fix in your repository.
+
 ### 3. Environment Configuration (CRITICAL)
 For the Oracle and Seeker modules to function, you must provide a Gemini API Key.
 
