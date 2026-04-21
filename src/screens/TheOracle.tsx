@@ -2,7 +2,7 @@ import { ChartLine, TriangleAlert, BookOpen, Key, Pen, Lock, Brain, Send, Loader
 import { motion, AnimatePresence } from 'motion/react';
 import { useState, useEffect, useRef } from 'react';
 import { useFirebase } from '../components/FirebaseProvider';
-import { db, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, limit, uploadFile, getDocs, deleteDoc } from '../lib/firebase';
+import { db, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, limit, uploadFile, getDocs, deleteDoc, doc } from '../lib/firebase';
 import { getOracleResponse, generateRecommendations } from '../lib/gemini';
 import { AnaisAvatar } from '../components/AnaisAvatar';
 import { toast } from 'sonner';
@@ -363,8 +363,8 @@ export default function TheOracle() {
                   ))}
                 </div>
                 
-                <div className=\"space-y-4\">
-                  <h4 className=\"text-xs font-bold uppercase tracking-widest text-primary mb-4\">
+                <div className="space-y-4">
+                  <h4 className="text-xs font-bold uppercase tracking-widest text-primary mb-4">
                     Central_Archive: {selectedCategory ? selectedCategory.toUpperCase() : 'TOTAL_SYNC'}
                   </h4>
                   {artifacts.filter(a => {
@@ -399,8 +399,8 @@ export default function TheOracle() {
                         .map((a) => (
                         <div key={a.id} className="p-4 bg-surface-container-high border-l-4 border-primary group relative">
                           <p className="font-bold text-sm truncate">{a.name}</p>
-                          <div className=\"flex justify-between items-center mt-1\">
-                            <p className=\"text-[9px] uppercase opacity-40 tracking-widest\">{a.type}</p>
+                          <div className="flex justify-between items-center mt-1">
+                            <p className="text-[9px] uppercase opacity-40 tracking-widest">{a.type}</p>
                             <button 
                               onClick={async () => {
                                 if (window.confirm("PURGE_FRAGMENT?")) {
@@ -408,9 +408,9 @@ export default function TheOracle() {
                                   toast.success("FRAGMENT_PURGED");
                                 }
                               }}
-                              className=\"opacity-0 group-hover:opacity-100 text-error hover:scale-110 transition-all\"
+                              className="opacity-0 group-hover:opacity-100 text-error hover:scale-110 transition-all"
                             >
-                              <X className=\"w-3 h-3\" />
+                              <X className="w-3 h-3" />
                             </button>
                           </div>
                         </div>
