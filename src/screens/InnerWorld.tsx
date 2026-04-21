@@ -15,7 +15,7 @@ export default function InnerWorld() {
   const [bridgeUrl, setBridgeUrl] = useState('');
   const [isBridging, setIsBridging] = useState(false);
   
-  const [activeTab, setActiveTab] = useState<'intake' | 'archive' | 'bridges'>('intake');
+  const [activeTab, setActiveTab] = useState<'intake' | 'bridges'>('intake');
 
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -40,9 +40,7 @@ export default function InnerWorld() {
     });
 
     const unsubscribeArtifacts = onSnapshot(collection(db, 'users', user.uid, 'artifacts'), (snap) => {
-      const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setArtifacts(data);
-      setCounts(prev => ({ ...prev, artifacts: data.filter(a => (a as any).module === 'inner').length }));
+      setCounts(prev => ({ ...prev, artifacts: snap.size }));
     });
 
     const unsubscribeBridges = onSnapshot(query(collection(db, 'users', user.uid, 'neural_bridges'), orderBy('createdAt', 'desc')), (snap) => {
@@ -110,23 +108,6 @@ export default function InnerWorld() {
     }
   };
 
-  const syncListArtifact = async (type: string, name: string) => {
-    if (!user || !name.trim()) return;
-    try {
-      await addDoc(collection(db, 'users', user.uid, 'artifacts'), {
-        type,
-        name: name.trim(),
-        module: 'inner',
-        createdAt: serverTimestamp()
-      });
-      toast.success(`${type.toUpperCase()}_ARCHIVED`);
-      rewardXP(30, 10).catch(e => console.error("Inner Archive XP failed:", e));
-    } catch (e) {
-      console.error("Inner Archive failure details:", e);
-      toast.error("ARCHIVE_FAILED");
-    }
-  };
-
   return (
     <motion.div 
       initial={{ opacity: 0 }}
@@ -140,12 +121,6 @@ export default function InnerWorld() {
             className={`py-4 md:flex-1 font-bold uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-3 ${activeTab === 'intake' ? 'bg-secondary text-on-secondary' : 'hover:bg-secondary/10 border-b border-secondary/20 md:border-b-0'}`}
           >
             <TerminalIcon className="w-4 h-4" /> Intake_Terminal
-          </button>
-          <button 
-            onClick={() => setActiveTab('archive')}
-            className={`py-4 md:flex-1 font-bold uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-3 ${activeTab === 'archive' ? 'bg-secondary text-on-secondary' : 'hover:bg-secondary/10 border-b border-secondary/20 md:border-b-0'}`}
-          >
-            <Database className="w-4 h-4" /> Artifacts_Archive
           </button>
           <button 
             onClick={() => setActiveTab('bridges')}
@@ -194,52 +169,6 @@ export default function InnerWorld() {
                  >
                    SYNC_TRUTH
                  </button>
-              </div>
-            </motion.div>
-          ) : activeTab === 'archive' ? (
-            <motion.div 
-              key="archive"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="glass-panel p-8 border-l-8 border-primary space-y-8"
-            >
-              <h3 className="text-2xl font-bold uppercase tracking-widest text-primary flex items-center gap-3">
-                <Database className="w-6 h-6" /> Data_Archive
-              </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                 {['Musician', 'Artist', 'Website'].map(type => (
-                   <div key={type} className="space-y-3">
-                      <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">Add_{type}</h4>
-                      <div className="relative">
-                        <input 
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              syncListArtifact(type.toLowerCase(), (e.target as HTMLInputElement).value);
-                              (e.target as HTMLInputElement).value = '';
-                            }
-                          }}
-                          placeholder={`Name of ${type}...`}
-                          className="w-full bg-surface-container-lowest border border-outline-variant p-3 text-xs focus:border-primary outline-none"
-                        />
-                         <Plus className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary opacity-30" />
-                      </div>
-                   </div>
-                 ))}
-              </div>
-
-              <div className="pt-8 border-t border-outline-variant/30">
-                <h4 className="text-xs font-bold uppercase tracking-widest mb-4">Current_Inventory: {counts.artifacts}</h4>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {artifacts
-                    .filter(a => a.module === 'inner')
-                    .map((a) => (
-                    <div key={a.id} className="p-3 bg-surface-container-high border border-outline-variant text-[10px] font-bold uppercase truncate">
-                      {a.name} <span className="opacity-40 ml-1">({a.type})</span>
-                    </div>
-                  ))}
-                </div>
               </div>
             </motion.div>
           ) : (
@@ -332,8 +261,8 @@ export default function InnerWorld() {
                <span>Memories:</span>
                <span className="font-bold">{counts.memories}</span>
              </div>
-             <div className="flex justify-between text-[10px] uppercase">
-               <span>Artifacts:</span>
+              <div className="flex justify-between text-[10px] uppercase">
+               <span>Total_Archive:</span>
                <span className="font-bold">{counts.artifacts}</span>
              </div>
              <div className="flex justify-between text-[10px] uppercase">

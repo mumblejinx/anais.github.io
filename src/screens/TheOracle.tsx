@@ -43,11 +43,12 @@ export default function TheOracle() {
       setMessages(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
 
-    // Artifacts Archive Logic
+    // Artifacts Archive Logic - Loading all artifacts for the central archive
     const unsubscribeArtifacts = onSnapshot(collection(db, 'users', user.uid, 'artifacts'), (snap) => {
       const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setArtifacts(data);
-      setCounts(prev => ({ ...prev, oracle: data.filter(a => (a as any).module === 'oracle').length }));
+      // Oracle count now reflects the total unified archive
+      setCounts(prev => ({ ...prev, oracle: data.length }));
     });
 
     const unsubscribeBridges = onSnapshot(collection(db, 'users', user.uid, 'neural_bridges'), (snap) => {
@@ -362,18 +363,56 @@ export default function TheOracle() {
                   ))}
                 </div>
                 
-                <div className="space-y-4">
-                  <h4 className="text-xs font-bold uppercase tracking-widest text-primary mb-4">
-                    Secured Artifacts: {selectedCategory || 'ALL'}
+                <div className=\"space-y-4\">
+                  <h4 className=\"text-xs font-bold uppercase tracking-widest text-primary mb-4\">
+                    Central_Archive: {selectedCategory ? selectedCategory.toUpperCase() : 'TOTAL_SYNC'}
                   </h4>
-                  {artifacts.filter(a => a.module === 'oracle' && (!selectedCategory || a.type === selectedCategory.toLowerCase())).length > 0 ? (
+                  {artifacts.filter(a => {
+                    if (!selectedCategory) return true;
+                    const type = a.type?.toLowerCase() || '';
+                    const cat = selectedCategory.toLowerCase();
+                    
+                    // Direct match or plural/singular normalization
+                    if (type === cat || type === cat.replace(/s$/, '') || cat === type.replace(/s$/, '')) return true;
+                    
+                    // Cross-module mappings for Inner -> Oracle consolidation
+                    if (cat === 'music' && type === 'musician') return true;
+                    if (cat === 'artists' && type === 'artist') return true;
+                    if (cat === 'websites' && type === 'website') return true;
+                    
+                    return false;
+                  }).length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {artifacts
-                        .filter(a => a.module === 'oracle' && (!selectedCategory || a.type === selectedCategory.toLowerCase()))
+                        .filter(a => {
+                          if (!selectedCategory) return true;
+                          const type = a.type?.toLowerCase() || '';
+                          const cat = selectedCategory.toLowerCase();
+                          
+                          if (type === cat || type === cat.replace(/s$/, '') || cat === type.replace(/s$/, '')) return true;
+                          if (cat === 'music' && type === 'musician') return true;
+                          if (cat === 'artists' && type === 'artist') return true;
+                          if (cat === 'websites' && type === 'website') return true;
+                          
+                          return false;
+                        })
                         .map((a) => (
-                        <div key={a.id} className="p-4 bg-surface-container-high border-l-4 border-primary">
+                        <div key={a.id} className="p-4 bg-surface-container-high border-l-4 border-primary group relative">
                           <p className="font-bold text-sm truncate">{a.name}</p>
-                          <p className="text-[10px] uppercase opacity-60 tracking-widest">{a.type}</p>
+                          <div className=\"flex justify-between items-center mt-1\">
+                            <p className=\"text-[9px] uppercase opacity-40 tracking-widest\">{a.type}</p>
+                            <button 
+                              onClick={async () => {
+                                if (window.confirm("PURGE_FRAGMENT?")) {
+                                  await deleteDoc(doc(db, 'users', user.uid, 'artifacts', a.id));
+                                  toast.success("FRAGMENT_PURGED");
+                                }
+                              }}
+                              className=\"opacity-0 group-hover:opacity-100 text-error hover:scale-110 transition-all\"
+                            >
+                              <X className=\"w-3 h-3\" />
+                            </button>
+                          </div>
                         </div>
                       ))}
                     </div>

@@ -84,15 +84,9 @@ service cloud.firestore {
 
     function isValidArtifact(data) {
       return data.keys().hasAll(['type']) &&
-             data.type in [
-               'book', 'key', 'pen', 'locked', 
-               'movies', 'music', 'books', 'comics', 'artists', 'websites', 'locations', 'activities',
-               'musician', 'artist', 'website'
-             ] &&
-             (data.name == null || (data.name is string && data.name.size() <= 200)) &&
-             (data.imageUrl == null || (data.imageUrl is string && data.imageUrl.size() <= 2000)) &&
-             (data.createdAt == null || data.createdAt is timestamp) &&
-             (data.module == null || data.module in ['oracle', 'inner']);
+             data.type is string &&
+             (data.name == null || (data.name is string && data.name.size() <= 1000)) &&
+             (data.createdAt == null || data.createdAt is timestamp);
     }
 
     function isValidSyncEntry(data) {
@@ -143,8 +137,8 @@ service cloud.firestore {
       }
 
       match /artifacts/{artifactId} {
-        allow list: if isOwner(userId);
-        allow create: if isOwner(userId) && isValidArtifact(incoming());
+        allow read, list: if isOwner(userId);
+        allow create, delete: if isOwner(userId) && isValidArtifact(incoming());
       }
 
       match /sync_entries/{entryId} {
