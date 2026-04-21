@@ -43,8 +43,9 @@ export default function TheOracle() {
       setMessages(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
 
-    // Artifacts Archive Logic - Loading all artifacts for the central archive
-    const unsubscribeArtifacts = onSnapshot(collection(db, 'users', user.uid, 'artifacts'), (snap) => {
+    // Artifacts Archive Logic - Loading all artifacts for the central archive sorted by latest
+    const qArtifacts = query(collection(db, 'users', user.uid, 'artifacts'), orderBy('createdAt', 'desc'));
+    const unsubscribeArtifacts = onSnapshot(qArtifacts, (snap) => {
       const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setArtifacts(data);
       // Oracle count now reflects the total unified archive
@@ -160,9 +161,10 @@ export default function TheOracle() {
       
       // Call reward separately so it doesn't block if rules reject it
       rewardXP(30, 10).catch(err => console.error("Archive XP failed:", err));
-    } catch (e) {
+    } catch (e: any) {
       console.error("Archive failure details:", e);
-      toast.error("ARCHIVE_ERROR: Fragment lost.", { id: loadingToast });
+      const errorMsg = e?.message || "Fragment lost in transmission.";
+      toast.error(`ARCHIVE_ERROR: ${errorMsg}`, { id: loadingToast });
     }
   };
 

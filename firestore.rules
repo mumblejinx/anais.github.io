@@ -71,7 +71,7 @@ service cloud.firestore {
              (data.coords == null || (data.coords is string && data.coords.size() <= 100)) &&
              (data.impact == null || (data.impact is string && data.impact.size() <= 2000)) &&
              (data.imageUrl == null || (data.imageUrl is string && data.imageUrl.size() <= 2000)) &&
-             data.createdAt == request.time;
+             (data.createdAt == null || data.createdAt is timestamp);
     }
 
     function isValidExpeditionLog(data) {
@@ -79,7 +79,7 @@ service cloud.firestore {
              data.activity is string && data.activity.size() <= 500 &&
              (data.resonance == null || (data.resonance is string && data.resonance.size() <= 2000)) &&
              (data.imageUrl == null || (data.imageUrl is string && data.imageUrl.size() <= 2000)) &&
-             data.createdAt == request.time;
+             (data.createdAt == null || data.createdAt is timestamp);
     }
 
     function isValidArtifact(data) {
@@ -93,7 +93,7 @@ service cloud.firestore {
       return data.keys().hasAll(['truth']) &&
              data.truth is string && data.truth.size() <= 10000 &&
              (data.imageUrl == null || (data.imageUrl is string && data.imageUrl.size() <= 2000)) &&
-             data.createdAt == request.time;
+             (data.createdAt == null || data.createdAt is timestamp);
     }
 
     function isValidNeuralBridge(data) {
@@ -113,7 +113,7 @@ service cloud.firestore {
              (data.url == null || (data.url is string && data.url.size() <= 1000)) &&
              (data.resonanceScore == null || data.resonanceScore is number) &&
              (data.isDismissed == null || data.isDismissed is bool) &&
-             data.createdAt == request.time;
+             (data.createdAt == null || data.createdAt is timestamp);
     }
 
     // --- Collection Rules ---
@@ -125,9 +125,14 @@ service cloud.firestore {
                     incoming().diff(existing()).affectedKeys().hasOnly(['xp', 'lvl', 'anaisXP', 'soulResonance', 'stoicEquilibrium', 'poeticResonance', 'subconsciousDepth', 'lastUpdated']);
 
       match /memories/{memoryId} {
-        allow list: if isOwner(userId);
-        allow get: if isOwner(userId) && isValidId(memoryId);
-        allow create: if isOwner(userId) && isValidMemory(incoming());
+        allow list, get: if isOwner(userId);
+        allow create: if isOwner(userId);
+        allow delete: if isOwner(userId);
+      }
+
+      match /messages/{messageId} {
+        allow list, get: if isOwner(userId);
+        allow create: if isOwner(userId);
         allow delete: if isOwner(userId);
       }
 
@@ -138,7 +143,7 @@ service cloud.firestore {
 
       match /artifacts/{artifactId} {
         allow read, list: if isOwner(userId);
-        allow create, delete: if isOwner(userId) && isValidArtifact(incoming());
+        allow create, delete: if isOwner(userId);
       }
 
       match /sync_entries/{entryId} {

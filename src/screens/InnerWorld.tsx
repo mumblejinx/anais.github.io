@@ -100,9 +100,10 @@ export default function InnerWorld() {
       toast.success("TRUTH_INGESTED", { id: loadingToast });
       
       rewardXP(150, 60).catch(e => console.error("Truth XP failed:", e));
-    } catch (e) {
+    } catch (e: any) {
       console.error("Sync failure details:", e);
-      toast.error("SYNC_FAILED", { id: loadingToast });
+      const errorMsg = e?.message || "Void connection timeout.";
+      toast.error(`SYNC_FAILED: ${errorMsg}`, { id: loadingToast });
     } finally {
       setIsSyncing(false);
     }
